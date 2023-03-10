@@ -78,9 +78,8 @@ func (t *AsyncTracker[T]) HasSynced() bool {
 // SingleFileTracker helps propagate HasSynced when events are processed in
 // order (i.e. via a queue).
 type SingleFileTracker struct {
+	count             int64
 	UpstreamHasSynced func() bool
-
-	count int64
 }
 
 // Start should be called prior to processing each key which is part of the
