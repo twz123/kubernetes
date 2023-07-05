@@ -22,6 +22,7 @@ package kuberuntime
 import (
 	"testing"
 
+	libcontainercgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -36,6 +37,13 @@ func TestApplySandboxResources(t *testing.T) {
 
 	config := &runtimeapi.PodSandboxConfig{
 		Linux: &runtimeapi.LinuxPodSandboxConfig{},
+	}
+
+	var unifiedResourcesForCgroupv2 map[string]string
+	if libcontainercgroups.IsCgroup2UnifiedMode() {
+		unifiedResourcesForCgroupv2 = map[string]string{
+			"memory.oom.group": "1",
+		}
 	}
 
 	require.NoError(t, err)
@@ -80,12 +88,14 @@ func TestApplySandboxResources(t *testing.T) {
 				CpuPeriod:          100000,
 				CpuQuota:           400000,
 				CpuShares:          2048,
+				Unified:            unifiedResourcesForCgroupv2,
 			},
 			expectedOverhead: &runtimeapi.LinuxContainerResources{
 				MemoryLimitInBytes: 134217728,
 				CpuPeriod:          100000,
 				CpuQuota:           100000,
 				CpuShares:          1024,
+				Unified:            unifiedResourcesForCgroupv2,
 			},
 		},
 		{
@@ -116,6 +126,7 @@ func TestApplySandboxResources(t *testing.T) {
 				CpuPeriod:          100000,
 				CpuQuota:           0,
 				CpuShares:          2,
+				Unified:            unifiedResourcesForCgroupv2,
 			},
 			expectedOverhead: &runtimeapi.LinuxContainerResources{},
 		},
